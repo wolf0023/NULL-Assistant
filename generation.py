@@ -105,7 +105,7 @@ async def create_response(
         # 検索結果をメッセージに挿入
         for i, body in enumerate(search_result):
             message += f" {i}. " + body["body"] + "\n"
-        log.info(message)
+        log.debug(message)
     
     # 回答を生成する
     log.debug(f"NULLに送信するメッセージ: {user_input}")
