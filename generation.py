@@ -57,6 +57,10 @@ class Model():
             # 履歴を読み込む
             gemini_session = self.model.start_chat(history=history)
 
+            # トークン数の表示
+            model_count_tokens = str(self.model.count_tokens(user_input)).replace("\n", " ")
+            log.debug(f"トークン数: {model_count_tokens} from google.generativeai")
+
             # APIリクエストを送信
             response = await gemini_session.send_message_async(user_input)
 
@@ -101,7 +105,7 @@ async def create_response(
     word, is_error = await model_Search.generate_message(user_input=user_input, history=[])
     if not word.isspace() and not is_error:
         search_result = await search_on_ddgs(word, 5)
-        message = user_input + "\n\n## Webからの情報\n"
+        message = user_input + "\n\n以下、ユーザーの入力ではない。\n## Webからの情報(必要に応じて参考にすること)\n"
         # 検索結果をメッセージに挿入
         for i, body in enumerate(search_result):
             message += f"{i}. " + body["body"] + "\n"
