@@ -101,10 +101,10 @@ async def create_response(
     word, is_error = await model_Search.generate_message(user_input=user_input, history=[])
     if not word.isspace() and not is_error:
         search_result = await search_on_ddgs(word, 5)
-        message = user_input + "\nWebからの情報:\n"
+        message = user_input + "\n\n## Webからの情報\n"
         # 検索結果をメッセージに挿入
         for i, body in enumerate(search_result):
-            message += f" {i}. " + body["body"] + "\n"
+            message += f"{i}. " + body["body"] + "\n"
         log.debug(message)
     
     # 回答を生成する
