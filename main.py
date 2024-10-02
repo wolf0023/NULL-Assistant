@@ -228,6 +228,7 @@ async def handle_slash_command_error(error: Exception):
             log.error(f"エラーが発生しました: {error}")
             return "エラーが発生しました。"
 
+# メッセージの送信
 async def send_message(message: discord.Message):
     user_input = message.content
     user_name = message.author.name
@@ -272,7 +273,7 @@ async def send_message(message: discord.Message):
     await delete_temporal_data(thread_id)
     await remove_id(thread_id) # ロック解除
 
-    # スレッドのクローズ
+    # 最大回数に達した場合、スレッドをクローズする
     if thread_history["count"] >= MAX_COUNTS:
         await message.channel.send(TOO_MANY_MESSAGES)
         await delete_thread(thread_id)
