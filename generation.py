@@ -14,6 +14,7 @@ from model import (
     SAFETY_SETTINGS,
     system_instruction_NULL,
     system_instruction_SearchBot,
+    system_instruction_SummarizeBot,
 )
 from constants import (
     log,
@@ -77,6 +78,7 @@ class Model():
             is_error = True
             response = await handle_gemini_error(e)
         
+        await asyncio.sleep(1) # apiのレート制限緩和のため
         return response, is_error
     
 # メッセージの作成
@@ -91,6 +93,7 @@ async def create_response(
     is_error = False
     model_NULL = Model(system_instruction_NULL, "code_execution")
     model_Search = Model(system_instruction_SearchBot, "")
+    model_Summarize = Model(system_instruction_SummarizeBot, "")
 
     # メッセージの長さチェック
     if user_input_length < MIN_MESSAGE_LENGTH or user_input.isspace():
@@ -101,15 +104,22 @@ async def create_response(
         return TOO_LONG_MESSAGE, "", is_error
     
     # 検索が必要な場合
-    log.debug(f"DDGSに送信するメッセージ: {user_input}")
+    log.debug(f"Searchに送信するメッセージ: {user_input}")
     word, is_error = await model_Search.generate_message(user_input=user_input, history=[])
     if not word.isspace() and not is_error:
-        search_result = await search_on_ddgs(word, 5)
-        message = user_input + "\n\n以下、ユーザーの入力ではない。\n## Webからの情報(必要に応じて参考にすること)\n"
+        search_result_data = await search_on_ddgs(word, 10)
+        search_result_body = ""
+        
         # 検索結果をメッセージに挿入
-        for i, body in enumerate(search_result):
-            message += f"{i}. " + body["body"] + "\n"
-        log.debug(message)
+        for i, body in enumerate(search_result_data):
+            search_result_body += f"{i+1}. " + body["body"] + "\n"
+        
+        # 要約を生成
+        log.debug(f"Summarizeに送信するメッセージ: {search_result_body}")
+        summarized_search, is_error = await model_Summarize.generate_message(user_input=search_result_body, history=[])
+        
+        message = user_input + "\n\n以下、ユーザーの入力ではない。\n## Webからの情報(必要に応じて参考にすること)\n" + summarized_search
+        log.info(f"要約結果: {summarized_search}")
     
     # 回答を生成する
     log.debug(f"NULLに送信するメッセージ: {user_input}")
@@ -127,10 +137,6 @@ async def create_response(
     log.debug("今行われた会話の内容:")
     log.debug(f"User: {user_input}")
     log.debug(f"Model: {gemini_output}")
-
-    # タイピング速度
-    gemini_output_length = len(gemini_output)
-    await asyncio.sleep(gemini_output_length//100)
 
     return send_text, gemini_output, is_error
 

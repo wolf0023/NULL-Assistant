@@ -245,14 +245,19 @@ async def send_message(message: discord.Message):
     
     # ロックされていない場合
     await append_id(thread_id) # ロック
+    thread_history = await load_thread_history(thread_id)
+
+    await message.channel.typing() # 実際にタイピングしているかのように見せる
+    response, gemini_output, is_error = await create_response(
+        user_input=user_input,
+        history=thread_history["messages"],
+        user_name=user_name,
+        counts=thread_history["count"],
+    )
     async with message.channel.typing():
-        thread_history = await load_thread_history(thread_id)
-        response, gemini_output, is_error = await create_response(
-            user_input=user_input,
-            history=thread_history["messages"],
-            user_name=user_name,
-            counts=thread_history["count"],
-        )
+        # タイピング速度
+        gemini_output_length = len(gemini_output)
+        await asyncio.sleep(gemini_output_length//100)
     await message.channel.send(response)
 
     if not is_error:
