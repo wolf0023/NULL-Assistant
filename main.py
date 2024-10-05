@@ -25,6 +25,10 @@ from constants import (
     CONFIRM_TO_DELETE_THREAD,
     THREAD_DELETED,
     TOO_MANY_MESSAGES,
+    BOT_HAS_NO_PERMISSION,
+    NO_PERMISSION,
+    COOLDOWN,
+    COMMAND_ERROR,
     EXIT_BOT,
 )
 from generation import create_response
@@ -219,14 +223,14 @@ async def end_command_error(inter, error):
 async def handle_slash_command_error(inter: discord.Integration, error: Exception):
     match error:
         case app_commands.errors.BotMissingPermissions():
-            await inter.response.send_message("Botに必要な権限が足りていません。", ephemeral=True)
+            await inter.response.send_message(BOT_HAS_NO_PERMISSION, ephemeral=True)
         case app_commands.errors.MissingPermissions():
-            await inter.response.send_message("このコマンドを実行する権限がありません。", ephemeral=True)
+            await inter.response.send_message(NO_PERMISSION, ephemeral=True)
         case app_commands.errors.CommandOnCooldown():
-            await inter.response.send_message("クールダウン中です。少し待ってから再度実行してください。", ephemeral=True)
+            await inter.response.send_message(COOLDOWN, ephemeral=True)
         case _:
             log.error(f"エラーが発生しました: {error}")
-            await inter.response.send_message("エラーが発生しました。", ephemeral=True)
+            await inter.response.send_message(COMMAND_ERROR, ephemeral=True)
 
 # メッセージの送信
 async def send_message(message: discord.Message):
