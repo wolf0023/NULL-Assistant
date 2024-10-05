@@ -88,8 +88,8 @@ async def help_command(inter: discord.Interaction):
     await inter.response.send_message(embed=embed)
 
 @help_command.error
-async def help_command_error(error):
-    await handle_slash_command_error(error)
+async def help_command_error(inter, error):
+    await handle_slash_command_error(inter, error)
 
 @tree.command(name="create", description="新しいチャットを作成します")
 @app_commands.guild_only()
@@ -153,8 +153,8 @@ async def create_command(inter: discord.Interaction, title: str = "新しいチ�
     log.info(f"{inter.user.name}が新しいチャットを作成しました: {title}")
 
 @create_command.error
-async def create_command_error(error):
-    await handle_slash_command_error(error)
+async def create_command_error(inter, error):
+    await handle_slash_command_error(inter, error)
 
 
 @tree.command(name="close", description="チャットを閉じます")
@@ -185,8 +185,8 @@ async def close_command(inter: discord.Interaction):
     await delete_thread(thread.id)
 
 @close_command.error
-async def close_command_error(error):
-    await handle_slash_command_error(error)
+async def close_command_error(inter, error):
+    await handle_slash_command_error(inter, error)
 
 
 @tree.command(name="end", description="Botを正常に終了します")
@@ -210,23 +210,23 @@ async def end_command(inter: discord.Interaction):
         log.error(f"{e}")
 
 @end_command.error
-async def end_command_error(error):
-    await handle_slash_command_error(error)
+async def end_command_error(inter, error):
+    await handle_slash_command_error(inter, error)
 
 
 #------ 関数関連 ------
 # スラッシュコマンドのエラー処理
-async def handle_slash_command_error(error: Exception):
+async def handle_slash_command_error(inter: discord.Integration, error: Exception):
     match error:
         case app_commands.errors.BotMissingPermissions():
-            return "Botに必要な権限が足りていません。"
+            await inter.response.send_message("Botに必要な権限が足りていません。", ephemeral=True)
         case app_commands.errors.MissingPermissions():
-            return "このコマンドを実行する権限がありません。"
+            await inter.response.send_message("このコマンドを実行する権限がありません。", ephemeral=True)
         case app_commands.errors.CommandOnCooldown():
-            return "クールダウン中です。少し待ってから再度実行してください。"
+            await inter.response.send_message("クールダウン中です。少し待ってから再度実行してください。", ephemeral=True)
         case _:
             log.error(f"エラーが発生しました: {error}")
-            return "エラーが発生しました。"
+            await inter.response.send_message("エラーが発生しました。", ephemeral=True)
 
 # メッセージの送信
 async def send_message(message: discord.Message):
@@ -234,9 +234,9 @@ async def send_message(message: discord.Message):
     user_name = message.author.name
     user_message = await insert_user_name(user_name, user_input)
     thread_id = message.channel.id
-    is_error = False
 
     # ロック時の処理
+    log.debug(f"{locked_threads}\n{temporal_data}")
     if thread_id in locked_threads:
         message_length = len(user_input)
         if message_length < MIN_MESSAGE_LENGTH or message_length > MAX_MESSAGE_LENGTH:
@@ -301,7 +301,7 @@ async def remove_id(thread_id: int):
 async def store_temporal_message(thread_id: int, user_message: str):
     global temporal_data
     if thread_id in locked_threads:
-        temporal_data[thread_id].append({"role": "user", "content": user_message}) 
+        temporal_data[thread_id].append({"role": "user", "parts": [user_message,]}) 
 
 # 一時的なデータを削除
 async def delete_temporal_data(thread_id: int):
