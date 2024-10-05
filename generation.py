@@ -58,15 +58,21 @@ class Model():
             # 履歴を読み込む
             gemini_session = self.model.start_chat(history=history)
 
-            # トークン数の表示
+            # 入力ワードのトークン数の表示
             model_count_tokens = str(self.model.count_tokens(user_input)).replace("\n", " ")
-            log.debug(f"トークン数: {model_count_tokens} from google.generativeai")
+            log.debug(f"入力トークン数: {model_count_tokens}")
 
             # APIリクエストを送信
             response = await gemini_session.send_message_async(user_input)
 
+            # トークン数の表示
+            model_usage_metadata = str(response.usage_metadata).replace("\n", " ")
+            log.info(f"{model_usage_metadata}from google.generativeai")
+
             # レスポンスを取得
             response = response.text
+
+            
         except genai.types.generation_types.StopCandidateException as e:
             # 再度リクエストを送信
             log.warning("生成が中断されたため、再度リクエストを送信します")
