@@ -242,6 +242,7 @@ async def send_message(message: discord.Message):
         if message_length < MIN_MESSAGE_LENGTH or message_length > MAX_MESSAGE_LENGTH:
             return
         await store_temporal_message(thread_id, user_message)
+        return
     
     # ロックされていない場合
     await append_id(thread_id) # ロック
@@ -266,7 +267,7 @@ async def send_message(message: discord.Message):
         data = await convert_to_data("user", user_message)
         thread_history["messages"].append(data)
         # 一時的なデータを保存
-        for data in temporal_data[thread_id]:
+        for data in temporal_data[str(thread_id)]:
             thread_history["messages"].append(data)
         # 出力の保存
         data = await convert_to_data("model", gemini_output)
@@ -289,7 +290,7 @@ async def append_id(thread_id: int):
     global locked_threads, temporal_data
     if thread_id not in locked_threads:
         locked_threads.append(thread_id)
-        temporal_data[thread_id] = []
+        temporal_data[str(thread_id)] = []
 
 # ロックされたスレッドのIDを削除
 async def remove_id(thread_id: int):
@@ -301,13 +302,13 @@ async def remove_id(thread_id: int):
 async def store_temporal_message(thread_id: int, user_message: str):
     global temporal_data
     if thread_id in locked_threads:
-        temporal_data[thread_id].append({"role": "user", "parts": [user_message,]}) 
+        temporal_data[str(thread_id)].append({"role": "user", "parts": [user_message,]}) 
 
 # 一時的なデータを削除
 async def delete_temporal_data(thread_id: int):
     global temporal_data
     if thread_id in locked_threads:
-        del temporal_data[thread_id]
+        del temporal_data[str(thread_id)]
 
 #------ イベント関連 ------
 @client.event
