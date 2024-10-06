@@ -125,7 +125,7 @@ async def create_command(inter: discord.Interaction, title: str = "新しいチ�
         slowmode_delay=1,
         type=discord.ChannelType.public_thread,
     )
-    await store_thread_history(data=thread_history, thread_id=thread.id)
+    store_thread_history(data=thread_history, thread_id=thread.id)
 
     # 作成日時を取得
     jst = datetime.timezone(datetime.timedelta(hours=9))
@@ -175,7 +175,7 @@ async def close_command(inter: discord.Interaction):
 
     # threadが存在しているか確認
     thread = inter.channel
-    if not await is_thread_exist(thread.id):
+    if not is_thread_exist(thread.id):
         await inter.response.send_message(THREAD_NOT_FOUND, ephemeral=True)
         return
     
@@ -186,7 +186,7 @@ async def close_command(inter: discord.Interaction):
     # threadをクローズ
     await thread.send(THREAD_DELETED)
     await thread.edit(archived=True, locked=True)
-    await delete_thread(thread.id)
+    delete_thread(thread.id)
 
 @close_command.error
 async def close_command_error(inter, error):
@@ -236,7 +236,7 @@ async def handle_slash_command_error(inter: discord.Integration, error: Exceptio
 async def send_message(message: discord.Message):
     user_input = message.content
     user_name = message.author.name
-    user_message = await insert_user_name(user_name, user_input)
+    user_message = insert_user_name(user_name, user_input)
     thread_id = message.channel.id
 
     # ロック時の処理
@@ -245,12 +245,12 @@ async def send_message(message: discord.Message):
         message_length = len(user_input)
         if message_length < MIN_MESSAGE_LENGTH or message_length > MAX_MESSAGE_LENGTH:
             return
-        await store_temporal_message(thread_id, user_message)
+        store_temporal_message(thread_id, user_message)
         return
     
     # ロックされていない場合
-    await append_id(thread_id) # ロック
-    thread_history = await load_thread_history(thread_id)
+    append_id(thread_id) # ロック
+    thread_history = load_thread_history(thread_id)
 
     await message.channel.typing() # 実際にタイピングしているかのように見せる
     response, gemini_output, is_error = await create_response(
@@ -268,48 +268,48 @@ async def send_message(message: discord.Message):
     if not is_error:
         thread_history["count"] += 1
         # 入力の保存
-        data = await convert_to_data("user", user_message)
+        data = convert_to_data("user", user_message)
         thread_history["messages"].append(data)
         # 一時的なデータを保存
         for data in temporal_data[str(thread_id)]:
             thread_history["messages"].append(data)
         # 出力の保存
-        data = await convert_to_data("model", gemini_output)
+        data = convert_to_data("model", gemini_output)
         thread_history["messages"].append(data)
-        await store_thread_history(data=thread_history, thread_id=thread_id)
+        store_thread_history(data=thread_history, thread_id=thread_id)
         
     
     # 一時履歴の削除
-    await delete_temporal_data(thread_id)
-    await remove_id(thread_id) # ロック解除
+    delete_temporal_data(thread_id)
+    remove_id(thread_id) # ロック解除
 
     # 最大回数に達した場合、スレッドをクローズする
     if thread_history["count"] >= MAX_COUNTS:
         await message.channel.send(TOO_MANY_MESSAGES)
-        await delete_thread(thread_id)
+        delete_thread(thread_id)
 
 
 # ロックされたスレッドのIDを追加
-async def append_id(thread_id: int):
+def append_id(thread_id: int):
     global locked_threads, temporal_data
     if thread_id not in locked_threads:
         locked_threads.append(thread_id)
         temporal_data[str(thread_id)] = []
 
 # ロックされたスレッドのIDを削除
-async def remove_id(thread_id: int):
+def remove_id(thread_id: int):
     global locked_threads
     if thread_id in locked_threads:
         locked_threads.remove(thread_id)
 
 # 一時的に保存
-async def store_temporal_message(thread_id: int, user_message: str):
+def store_temporal_message(thread_id: int, user_message: str):
     global temporal_data
     if thread_id in locked_threads:
         temporal_data[str(thread_id)].append({"role": "user", "parts": [user_message,]}) 
 
 # 一時的なデータを削除
-async def delete_temporal_data(thread_id: int):
+def delete_temporal_data(thread_id: int):
     global temporal_data
     if thread_id in locked_threads:
         del temporal_data[str(thread_id)]
@@ -327,7 +327,7 @@ async def on_message(message: discord.Message):
     
     # 別のスレッドは無視
     thread = message.channel
-    if not await is_thread_exist(thread.id):
+    if not is_thread_exist(thread.id):
         return
     
     # メッセージの送信

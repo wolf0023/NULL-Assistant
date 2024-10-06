@@ -63,7 +63,7 @@ class Model():
             log.debug(f"入力トークン数: {model_count_tokens}")
 
             # APIリクエストを送信
-            response = await gemini_session.send_message_async(user_input)
+            response = gemini_session.send_message(user_input)
 
             # トークン数の表示
             model_usage_metadata = str(response.usage_metadata).replace("\n", " ")
@@ -78,11 +78,11 @@ class Model():
             log.warning("生成が中断されたため、再度リクエストを送信します")
             log.warning(f"{e}")
             await asyncio.sleep(2)
-            return await self.generate_message(user_input, history)
+            return self.generate_message(user_input, history)
         except Exception as e:
             # エラー処理
             is_error = True
-            response = await handle_gemini_error(e)
+            response = handle_gemini_error(e)
         
         await asyncio.sleep(1) # apiのレート制限緩和のため
         return response, is_error
@@ -94,7 +94,7 @@ async def create_response(
         user_name: str,
         counts: int,
 ) -> tuple[str, str, bool]:
-    message = await insert_user_name(user_input, user_name)
+    message = insert_user_name(user_input, user_name)
     user_input_length = len(user_input)
     is_error = False
     model_NULL = Model(system_instruction_NULL, "code_execution")
@@ -113,7 +113,7 @@ async def create_response(
     log.debug(f"Searchに送信するメッセージ: {user_input}")
     word, is_error = await model_Search.generate_message(user_input=user_input, history=[])
     if not word.isspace() and not is_error:
-        search_result_data = await search_on_ddgs(word, 10)
+        search_result_data = search_on_ddgs(word, 10)
         search_result_body = ""
 
         # 検索結果がある場合
@@ -134,8 +134,8 @@ async def create_response(
     gemini_output, is_error = await model_NULL.generate_message(user_input=message, history=history)
 
     # 文の修正
-    gemini_output = await remove_line_breaks(gemini_output)
-    gemini_output = await remove_unnecessary_line(gemini_output)
+    gemini_output = remove_line_breaks(gemini_output)
+    gemini_output = remove_unnecessary_line(gemini_output)
 
     # メッセージの送信(Discordメッセージの最大文字数(2000)を超えないようにする)
     # MAX_COUNTSの2/3以上の回数の場合、色を変更
@@ -149,7 +149,7 @@ async def create_response(
     return send_text, gemini_output, is_error
 
 # geminiのエラー処理
-async def handle_gemini_error(error: Exception):
+def handle_gemini_error(error: Exception):
     match error:
         case auth_except.DefaultCredentialsError():
             log.error("API キーに必要な権限がありません\n(google.auth.exceptions.DefaultCredentialsError)")
