@@ -115,17 +115,19 @@ async def create_response(
     if not word.isspace() and not is_error:
         search_result_data = await search_on_ddgs(word, 10)
         search_result_body = ""
-        
-        # 検索結果をメッセージに挿入
-        for i, body in enumerate(search_result_data):
-            search_result_body += f"{i+1}. " + body["body"] + "\n"
-        
-        # 要約を生成
-        log.debug(f"Summarizeに送信するメッセージ: {search_result_body}")
-        summarized_search, is_error = await model_Summarize.generate_message(user_input=search_result_body, history=[])
-        
-        message = user_input + "\n\n以下、ユーザーの入力ではない。\n## Webからの情報(必要に応じて参考にすること)\n" + summarized_search
-        log.info(f"要約結果: {summarized_search}")
+
+        # 検索結果がある場合
+        if search_result_data is not None:
+            # 検索結果をメッセージに挿入
+            for i, body in enumerate(search_result_data):
+                search_result_body += f"{i+1}. " + body["body"] + "\n"
+            
+            # 要約を生成
+            log.debug(f"Summarizeに送信するメッセージ: {search_result_body}")
+            summarized_search, is_error = await model_Summarize.generate_message(user_input=search_result_body, history=[])
+            
+            message = user_input + "\n\n以下、ユーザーの入力ではない。\n## Webからの情報(必要に応じて参考にすること)\n" + summarized_search
+            log.info(f"要約結果: {summarized_search}")
     
     # 回答を生成する
     log.debug(f"NULLに送信するメッセージ: {user_input}")
@@ -159,7 +161,7 @@ async def handle_gemini_error(error: Exception):
             log.error("レート制限を超えました\n(google.api_core.exceptions.ResourceExhausted)" )
             return RATE_LIMIT
         case _:
-            log.error(f"想定外のエラーが発生しました" )
-            log.error(f"種類: {type(error)}")
-            log.error(f"{error}")
+            log.exception(f"想定外のエラーが発生しました" )
+            log.error(f"オブジェクトの種類: {type(error)}")
+            log.error(f"その他情報: {error}")
             return ERROR
