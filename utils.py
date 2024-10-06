@@ -85,7 +85,7 @@ async def remove_unnecessary_line(text: str):
 # DuckDuckGo検索
 async def search_on_ddgs(word: str, max: int):
         try:
-            results = await AsyncDDGS(proxy="None").atext(
+            results = await AsyncDDGS(proxy=None).atext(
                 keywords=word,
                 safesearch='moderate',
                 region="jp-jp",
