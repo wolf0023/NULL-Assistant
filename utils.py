@@ -28,9 +28,9 @@ async def store_thread_history(data: dict, thread_id: int) -> None:
         with open(file_path, "w", encoding="UTF-8") as f:
             json.dump(data, f, indent=4, ensure_ascii=False)
     except Exception as e:
-        log.error(f"ファイルの書き込みに失敗しました:")
-        log.error(f"種類: {type(e)}")
-        log.error(f"{e}")
+        log.exception(f"ファイルの書き込みに失敗しました:")
+        log.error(f"オブジェクトの種類: {type(e)}")
+        log.error(f"その他情報: {e}")
 
 # threadの履歴の読み込み
 async def load_thread_history(thread_id: int) -> dict:
@@ -44,9 +44,9 @@ async def load_thread_history(thread_id: int) -> dict:
         with open(file_path, "r", encoding="UTF-8") as f:
             return json.load(f)
     except Exception as e:
-        log.error(f"ファイルの読み込みに失敗しました:")
-        log.error(f"種類: {type(e)}")
-        log.error(f"{e}")
+        log.exception(f"ファイルの読み込みに失敗しました:")
+        log.error(f"オブジェクトの種類: {type(e)}")
+        log.error(f"その他情報: {e}")
 
 # 保存形式に変換
 async def convert_to_data(role: str, text: str) -> dict:
@@ -62,9 +62,9 @@ async def delete_thread(thread_id: int) -> None:
         try:
             os.remove(file_path)
         except Exception as e:
-            log.error(f"ファイルの削除に失敗しました:")
-            log.error(f"種類: {type(e)}")
-            log.error(f"{e}")
+            log.exception(f"ファイルの削除に失敗しました:")
+            log.error(f"オブジェクトの種類: {type(e)}")
+            log.error(f"その他情報: {e}")
 
 # 文末の改行と空白を削除
 async def remove_line_breaks(text: str):
@@ -84,13 +84,19 @@ async def remove_unnecessary_line(text: str):
 
 # DuckDuckGo検索
 async def search_on_ddgs(word: str, max: int):
-        results = await AsyncDDGS(proxy=None).atext(
-            keywords=word,
-            safesearch='moderate',
-            region="jp-jp",
-            backend='api',
-            max_results=max,
-        )
+        try:
+            results = await AsyncDDGS(proxy="None").atext(
+                keywords=word,
+                safesearch='moderate',
+                region="jp-jp",
+                backend='api',
+                max_results=max,
+            )
+        except Exception as e:
+            log.exception(f"検索エンジンでエラーが発生しました:")
+            log.error(f"オブジェクトの種類: {type(e)}")
+            log.error(f"その他情報: {e}")
+            return None
         return results
 
 # 送信者の名前を挿入

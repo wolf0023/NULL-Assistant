@@ -53,9 +53,9 @@ async def on_ready():
         await tree.sync(guild=discord.Object(id=DISCORD_GUILD_ID))
         log.info(f"{client.user}としてログインしました。（ID: {client.user.id}）")
     except Exception as e:
-        log.error(f"ログイン時にエラーが発生しました")
-        log.error(f"種類: {type(e)}")
-        log.error(f"{e}")
+        log.exception(f"ログイン時にエラーが発生しました")
+        log.error(f"オブジェクトの種類: {type(e)}")
+        log.error(f"その他情報: {e}")
 
 #------ Discord Bot Commands ------
 @tree.command(name="help", description="ヘルプを表示します")
@@ -209,9 +209,9 @@ async def end_command(inter: discord.Interaction):
         await inter.response.send_message(EXIT_BOT, ephemeral=True)
         await client.close()
     except Exception as e:
-        log.error(f"Bot終了中にエラーが発生しました")
-        log.error(f"種類: {type(e)}")
-        log.error(f"{e}")
+        log.exception(f"Bot終了中にエラーが発生しました")
+        log.error(f"オブジェクトの種類: {type(e)}")
+        log.error(f"その他情報: {e}")
 
 @end_command.error
 async def end_command_error(inter, error):
