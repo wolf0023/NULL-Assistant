@@ -16,8 +16,8 @@ async def on_ready():
         await tree.sync(guild=None)
         log.info("コマンドをリセットしました。botを再度入れなおしてください。")
     except Exception as e:
-        log.error(f"コマンドのリセットに失敗しました:")
-        log.error(f"種類: {type(e)}")
-        log.error(f"{e}")
+        log.exception(f"コマンドのリセットに失敗しました:")
+        log.error(f"オブジェクトの種類: {type(e)}")
+        log.error(f"その他情報: {e}")
 
 client.run(DISCORD_TOKEN_KEY)
