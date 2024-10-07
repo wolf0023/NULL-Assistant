@@ -87,9 +87,7 @@ def search_on_ddgs(word: str, max: int):
         try:
             results = DDGS(proxy=None).text(
                 keywords=word,
-                safesearch='moderate',
                 region="jp-jp",
-                backend='api',
                 max_results=max,
             )
         except Exception as e:
