@@ -113,7 +113,7 @@ async def create_response(
     log.debug(f"Searchに送信するメッセージ: {user_input}")
     word, is_error = await model_Search.generate_message(user_input=user_input, history=[])
     if not word.isspace() and not is_error:
-        search_result_data = search_on_ddgs(word, 10)
+        search_result_data = search_on_ddgs(word, 5)
         search_result_body = ""
 
         # 検索結果がある場合
